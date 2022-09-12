@@ -1,4 +1,5 @@
 import net from 'net';
+import { Logger } from './utils/logger';
 
 const port = 3000;
 const hostname = '127.0.0.1';
@@ -55,12 +56,12 @@ function connect(port: number, host: string): net.Socket {
 
 const proxy = net.createServer((client) => {
   client.once('data', (data) => {
-    const { host, message, method, isTLS, port, httpVersion } =
-      parseHttpMessage(data);
+    const { host, message, isTLS, port, httpVersion } = parseHttpMessage(data);
 
-    console.log(message, '\n');
+    Logger.log(message, '\n');
 
     if (isHostBlocked(host)) {
+      Logger.info(`Blocked host: ${host}`);
       const response = createHttpResponse(403, httpVersion);
       client.write(response);
       client.end();
@@ -78,17 +79,17 @@ const proxy = net.createServer((client) => {
     } else server.write(data);
 
     client.on('error', (err) => {
-      console.error(`[Client] [${err.name}]: `, err.message);
+      Logger.error(`Client -> ${err.name}:`, err.message);
     });
 
     server.on('error', (err) => {
-      console.error(`[Server] [${err.name}]: `, err.message);
+      Logger.error(`Server -> ${err.name}:`, err.message);
     });
   });
 });
 
 proxy.on('error', (err) => {
-  console.error(`[Proxy] [${err.name}]: `, err.message);
+  Logger.error(`Proxy -> ${err.name}`, err.message);
 });
 
 proxy.listen(port, hostname);
