@@ -4,7 +4,17 @@ import { Logger } from './utils/logger';
 const port = 3000;
 const hostname = '127.0.0.1';
 
-const blackList = ['google.com', 'facebook'];
+const blacklist = ['google.com', 'facebook.com'];
+const shouldBlockBlacklistHosts = process.argv.some(
+  (arg) => arg === '--block-blacklist',
+);
+
+if (shouldBlockBlacklistHosts) {
+  Logger.info(
+    'Blocking requests to the following hosts:',
+    blacklist.join(', '),
+  );
+}
 
 function parseHttpMessage(data: Buffer) {
   const message = data.toString().split('\r\n\r\n')[0];
@@ -26,7 +36,7 @@ function parseHttpMessage(data: Buffer) {
 }
 
 function isHostBlocked(host: string) {
-  return blackList.some((h) => host.includes(h));
+  return blacklist.some((h) => host.includes(h));
 }
 
 type HttpStatusCode = 200 | 403;
@@ -60,7 +70,7 @@ const proxy = net.createServer((client) => {
 
     Logger.log(message, '\n');
 
-    if (isHostBlocked(host)) {
+    if (shouldBlockBlacklistHosts && isHostBlocked(host)) {
       Logger.info(`Blocked host: ${host}`);
       const response = createHttpResponse(403, httpVersion);
       client.write(response);
