@@ -71,7 +71,7 @@ const proxy = net.createServer((client) => {
     Logger.log(message, '\n');
 
     if (shouldBlockBlacklistHosts && isHostBlocked(host)) {
-      Logger.info(`Blocked host: ${host}`);
+      Logger.info(`Blocked host: ${host}\n`);
       const response = createHttpResponse(403, httpVersion);
       client.write(response);
       client.end();
