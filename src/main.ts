@@ -46,10 +46,19 @@ function createHttpResponse(code: HttpStatusCode, httpVersion = '1.1') {
   return response;
 }
 
+function connect(port: number, host: string): net.Socket {
+  return net.connect({
+    port,
+    host,
+  });
+}
+
 const proxy = net.createServer((client) => {
   client.once('data', (data) => {
     const { host, message, method, isTLS, port, httpVersion } =
       parseHttpMessage(data);
+
+    console.log(message, '\n');
 
     if (isHostBlocked(host)) {
       const response = createHttpResponse(403, httpVersion);
@@ -58,12 +67,7 @@ const proxy = net.createServer((client) => {
       return;
     }
 
-    const server = net.connect({
-      port,
-      host,
-    });
-
-    console.log(message, '\n');
+    const server = connect(port, host);
 
     client.pipe(server);
     server.pipe(client);
