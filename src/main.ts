@@ -57,6 +57,11 @@ function createHttpResponse(code: HttpStatusCode, httpVersion = '1.1') {
   return response;
 }
 
+function isHttpResponse(message: string) {
+  const beginsWithHttp = /^(HTTP)\/\d(.\d)?/;
+  return beginsWithHttp.test(message);
+}
+
 function connect(port: number, host: string): net.Socket {
   return net.connect({
     port,
@@ -81,7 +86,18 @@ const proxy = net.createServer((client) => {
     const server = connect(port, host);
 
     client.pipe(server);
-    server.pipe(client);
+
+    server.on('data', (data) => {
+      if (!isHttpResponse(data.toString())) {
+        client.write(data);
+        return;
+      }
+
+      const message = data.toString().split('\r\n');
+      const header = 'Proxy-Server: nodejs-proxy';
+      message.splice(1, 0, header);
+      client.write(message.join('\r\n') + '\r\n');
+    });
 
     if (isTLS) {
       const response = createHttpResponse(200, httpVersion);
